@@ -1,6 +1,8 @@
 from randomuser import RandomUser
 import pandas as pd
 import hashlib
+import psycopg2
+from database.controller import Controller
 
 
 # Get random users info
@@ -25,4 +27,15 @@ men_over_thiry_df = all_users_df[mask]
 column_to_hash = 'login.password'
 all_users_df[column_to_hash] = all_users_df[column_to_hash].apply(lambda x: hashlib.sha256(x.encode()).hexdigest())
 
-all_users_df.to_csv('all_users.csv')
+# change column names
+columns = [column.replace('.', '_') for column in all_users_df.columns]
+all_users_df.columns = columns
+
+# Create a new dataframe
+controller = Controller()
+controller.create_new_db(new_db_name='chartbox', close_connection=False)
+controller.create_initial_tables(db_name='chartbox', dataframe=all_users_df.iloc[[0]], close_connection=False)
+controller.import_to_db(table_name='data_table', dataframe=all_users_df, close_connection=True)
+
+
+
